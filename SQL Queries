@@ -1,0 +1,213 @@
+-- ============================================================
+-- QUERY 1: Overall Attrition Rate
+-- Business Question: What is the company's overall attrition rate?
+-- Why it matters: This is your headline KPI — the first number
+--                 any HR executive wants to see.
+-- ============================================================
+ 
+SELECT
+    COUNT(*) AS total_employees,
+    SUM(AttritionFlag) AS employees_left,
+    COUNT(*) - SUM(AttritionFlag) AS employees_stayed,
+    ROUND(SUM(AttritionFlag) * 100.0 / COUNT(*), 2) AS attrition_rate_pct
+FROM hr_analytics;
+ 
+ 
+-- ============================================================
+-- QUERY 2: Attrition Rate by Department
+-- Business Question: Which department is losing the most people?
+-- Why it matters: HR needs to know WHERE to focus retention
+--                 efforts and budget first.
+-- ============================================================
+ 
+SELECT
+    Department,
+    COUNT(*) AS total_employees,
+    SUM(AttritionFlag) AS employees_left,
+    ROUND(SUM(AttritionFlag) * 100.0 / COUNT(*), 2) AS attrition_rate_pct,
+    ROUND(AVG(MonthlyIncome), 0) AS avg_monthly_income
+FROM hr_analytics
+GROUP BY Department
+ORDER BY attrition_rate_pct DESC;
+ 
+ 
+-- ============================================================
+-- QUERY 3: Attrition by Job Role
+-- Business Question: Which job roles are bleeding talent the most?
+-- Why it matters: Losing a Sales Rep costs less than losing a
+--                 Research Director — role-level view is critical.
+-- ============================================================
+ 
+SELECT
+    JobRole,
+    Department,
+    COUNT(*)  AS total_employees,
+    SUM(AttritionFlag) AS employees_left,
+    ROUND(SUM(AttritionFlag) * 100.0 / COUNT(*), 2) AS attrition_rate_pct,
+    ROUND(AVG(MonthlyIncome), 0) AS avg_monthly_income,
+    ROUND(AVG(YearsAtCompany), 1) AS avg_tenure_years
+FROM hr_analytics
+GROUP BY JobRole, Department
+ORDER BY attrition_rate_pct DESC;
+ 
+ 
+-- ============================================================
+-- QUERY 4: Does Overtime Drive Attrition?
+-- Business Question: Are overworked employees more likely to quit?
+-- Why it matters: If yes, fixing overtime policy could directly
+--                 reduce attrition — a cheap, fast HR intervention.
+-- ============================================================
+ 
+SELECT
+    OverTime,
+    COUNT(*) AS total_employees,
+    SUM(AttritionFlag) AS employees_left,
+    ROUND(SUM(AttritionFlag) * 100.0 / COUNT(*), 2) AS attrition_rate_pct,
+    ROUND(AVG(MonthlyIncome), 0) AS avg_monthly_income,
+    ROUND(AVG(WorkLifeBalance), 2) AS avg_work_life_balance
+FROM hr_analytics
+GROUP BY OverTime
+ORDER BY attrition_rate_pct DESC;
+ 
+ 
+-- ============================================================
+-- QUERY 5: Salary Band vs Attrition
+-- Business Question: Are low-paid employees leaving more often?
+-- Why it matters: Identifies if pay is a root cause —
+--                 helps justify salary revision proposals.
+-- ============================================================
+ 
+SELECT
+    SalaryBand,
+    COUNT(*) AS total_employees,
+    SUM(AttritionFlag) AS employees_left,
+    ROUND(SUM(AttritionFlag) * 100.0 / COUNT(*), 2) AS attrition_rate_pct,
+    ROUND(AVG(MonthlyIncome), 0) AS avg_monthly_income,
+    ROUND(AVG(PercentSalaryHike), 2) AS avg_salary_hike_pct
+FROM hr_analytics
+GROUP BY SalaryBand
+ORDER BY avg_monthly_income ASC;
+ 
+ 
+-- ============================================================
+-- QUERY 6: Age Group & Attrition Analysis
+-- Business Question: Which age group is most at risk of leaving?
+-- Why it matters: Helps tailor retention strategies —
+--                 younger employees need growth, older need stability.
+-- ============================================================
+ 
+SELECT
+    AgeGroup,
+    COUNT(*) AS total_employees,
+    SUM(AttritionFlag) AS employees_left,
+    ROUND(SUM(AttritionFlag) * 100.0 / COUNT(*), 2) AS attrition_rate_pct,
+    ROUND(AVG(MonthlyIncome), 0) AS avg_monthly_income,
+    ROUND(AVG(YearsAtCompany), 1) AS avg_tenure_years,
+    ROUND(AVG(JobSatisfaction), 2) AS avg_job_satisfaction
+FROM hr_analytics
+GROUP BY AgeGroup
+ORDER BY attrition_rate_pct DESC;
+ 
+ 
+-- ============================================================
+-- QUERY 7: Job Satisfaction & Work-Life Balance vs Attrition
+-- Business Question: Do unhappy employees leave more?
+-- Why it matters: Satisfaction scores are leading indicators —
+--                 catching low scores early can prevent exits.
+-- ============================================================
+ 
+SELECT
+    JobSatisfactionLabel,
+    WorkLifeBalanceLabel,
+    COUNT(*) AS total_employees,
+    SUM(AttritionFlag) AS employees_left,
+    ROUND(SUM(AttritionFlag) * 100.0 / COUNT(*), 2) AS attrition_rate_pct
+FROM hr_analytics
+GROUP BY JobSatisfactionLabel, WorkLifeBalanceLabel
+ORDER BY attrition_rate_pct DESC
+LIMIT 10;
+ 
+ 
+-- ============================================================
+-- QUERY 8: Performance Rating & Compensation
+-- Business Question: Are high performers being rewarded fairly?
+-- Why it matters: If outstanding performers get the same hike
+--                 as average ones, they will leave for better offers.
+-- ============================================================
+ 
+SELECT
+    PerformanceRating,
+    CASE PerformanceRating
+        WHEN 3 THEN 'Excellent'
+        WHEN 4 THEN 'Outstanding'
+        ELSE 'Below Average'
+    END AS performance_label,
+    COUNT(*) AS employee_count,
+    ROUND(AVG(MonthlyIncome), 0) AS avg_monthly_income,
+    ROUND(AVG(PercentSalaryHike), 2) AS avg_salary_hike_pct,
+    ROUND(AVG(TrainingTimesLastYear), 2) AS avg_trainings_per_year,
+    SUM(AttritionFlag) AS employees_left,
+    ROUND(SUM(AttritionFlag) * 100.0 / COUNT(*), 2) AS attrition_rate_pct
+FROM hr_analytics
+GROUP BY PerformanceRating
+ORDER BY PerformanceRating DESC;
+ 
+ 
+-- ============================================================
+-- QUERY 9: Tenure Band & Promotion Gap
+-- Business Question: Are employees stuck in roles without growth?
+-- Why it matters: Stagnation (no promotion for years) is a
+--                 silent attrition driver — often missed by HR.
+-- ============================================================
+ 
+SELECT
+    TenureBand,
+    COUNT(*) AS total_employees,
+    ROUND(AVG(YearsSinceLastPromotion), 2) AS avg_yrs_since_promotion,
+    ROUND(AVG(YearsInCurrentRole), 2) AS avg_yrs_in_current_role,
+    ROUND(AVG(MonthlyIncome), 0) AS avg_monthly_income,
+    SUM(AttritionFlag) AS employees_left,
+    ROUND(SUM(AttritionFlag) * 100.0 / COUNT(*), 2) AS attrition_rate_pct
+FROM hr_analytics
+GROUP BY TenureBand
+ORDER BY avg_yrs_since_promotion DESC;
+ 
+ 
+-- ============================================================
+-- QUERY 10: Profile of a Typical Employee Who Left
+-- Business Question: What does a leaving employee look like?
+-- Why it matters: This creates a "risk profile" HR can use
+--                 to flag current employees before they resign.
+-- ============================================================
+ 
+SELECT
+    'Employees Who LEFT' AS profile,
+    ROUND(AVG(Age), 1) AS avg_age,
+    ROUND(AVG(MonthlyIncome), 0) AS avg_monthly_income,
+    ROUND(AVG(YearsAtCompany), 1) AS avg_tenure_years,
+    ROUND(AVG(YearsSinceLastPromotion), 1) AS avg_yrs_since_promotion,
+    ROUND(AVG(JobSatisfaction), 2) AS avg_job_satisfaction,
+    ROUND(AVG(WorkLifeBalance), 2) AS avg_work_life_balance,
+    ROUND(AVG(EnvironmentSatisfaction), 2) AS avg_env_satisfaction,
+    ROUND(AVG(DistanceFromHome), 1) AS avg_distance_from_home,
+    ROUND(AVG(NumCompaniesWorked), 1) AS avg_prev_companies,
+    ROUND(SUM(CASE WHEN OverTime = 'Yes' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1) AS pct_on_overtime
+FROM hr_analytics
+WHERE Attrition = 'Yes'
+ 
+UNION ALL
+ 
+SELECT
+    'Employees Who STAYED' AS profile,
+    ROUND(AVG(Age), 1) AS avg_age,
+    ROUND(AVG(MonthlyIncome), 0) AS avg_monthly_income,
+    ROUND(AVG(YearsAtCompany), 1) AS avg_tenure_years,
+    ROUND(AVG(YearsSinceLastPromotion), 1) AS avg_yrs_since_promotion,
+    ROUND(AVG(JobSatisfaction), 2) AS avg_job_satisfaction,
+    ROUND(AVG(WorkLifeBalance), 2) AS avg_work_life_balance,
+    ROUND(AVG(EnvironmentSatisfaction), 2) AS avg_env_satisfaction,
+    ROUND(AVG(DistanceFromHome), 1) AS avg_distance_from_home,
+    ROUND(AVG(NumCompaniesWorked), 1) AS avg_prev_companies,
+    ROUND(SUM(CASE WHEN OverTime = 'Yes' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 1) AS pct_on_overtime
+FROM hr_analytics
+WHERE Attrition = 'No';
